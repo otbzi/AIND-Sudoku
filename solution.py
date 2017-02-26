@@ -149,11 +149,11 @@ def reduce_puzzle(values):
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
 
         # Your code here: Use the Eliminate Strategy
+        # Your code here: Use the Only Choice Strategy
         values = eliminate(values)
         values = only_choice(values)
         values = naked_twins(values)
 
-        # Your code here: Use the Only Choice Strategy
 
         # Check how many boxes have a determined value, to compare
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
@@ -191,6 +191,8 @@ def solve(grid):
     Returns:
         The dictionary representation of the final sudoku grid. False if no solution exists.
     """
+    values = grid_values(grid)
+    return search(values)
 
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
