@@ -16,6 +16,16 @@ unitlist = row_units + column_units + square_units
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
+# hard code diagonal units
+diagonal_units = [
+    list(map(lambda x:x[0]+x[1], zip(rows, cols))),
+    list(map(lambda x:x[0]+x[1], zip(rows[::-1], cols)))]
+
+
+def is_diagonal(box_key):
+    return any(box_key in dia for dia in diagonal_units)
+
+
 def assign_value(values, box, value):
     """
     Please use this function to update your values dictionary!
@@ -25,6 +35,7 @@ def assign_value(values, box, value):
     if len(value) == 1:
         assignments.append(values.copy())
     return values
+
 
 def naked_twins(values):
     """Eliminate values using the naked twins strategy.
@@ -73,7 +84,28 @@ def naked_twins(values):
                     for i in v:
                         values[k] = values[k].replace(i, '')
 
+    # naked twins in diagonal
+    # a lot of duplicate code here, but i am too lazy to refactor it ...
+    for diagonal in diagonal_units:
+        twins_count = {}
+        for k in diagonal:
+            v = values[k]
+            if len(v) == 2:
+                if twins_count.get(v) is None:
+                    twins_count[v] = 1
+                else:
+                    twins_count[v] += 1
+
+        for v, count in twins_count.items():
+            if count == 2:
+                for k in col:
+                    if values[k] == v:
+                        continue
+                    for i in v:
+                        values[k] = values[k].replace(i, '')
+
     return values
+
 
 def grid_values(grid):
     """
@@ -96,6 +128,7 @@ def grid_values(grid):
 
     return res
 
+
 def display(values):
     """
     Display the values as a 2-D grid.
@@ -110,6 +143,7 @@ def display(values):
         if r in 'CF': print(line)
     return
 
+
 def eliminate(values):
     solved_values = [box for box in values.keys() if len(values[box]) == 1]
     for k in solved_values:
@@ -117,12 +151,22 @@ def eliminate(values):
         for peer in peers[k]:
             values[peer] = values[peer].replace(v, '')
 
+        # eliminate in diagonal
+        for diagonal in diagonal_units:
+            for d in diagonal:
+                if k == d:
+                    continue
+                values[peer] = values[peer].replace(v, '')
+
     return values
+
 
 def only_choice(values):
     unsolved_values = [box for box in values.keys() if len(values[box]) != 1]
     for k in unsolved_values:
         v = values[k]
+
+        is_diag = is_diagonal(k)
 
         for item in v:
             l = [item for row in row_units if row[0][0] == k[0] for p in row if item in values[p]]
@@ -140,7 +184,15 @@ def only_choice(values):
                 values[k] = item
                 break
 
+            # only choice for diagonal
+            if is_diag:
+                l = [item for diagonal in diagonal_units if k in diagonal for p in diagonal if item in values[p]]
+                if len(l) == 1:
+                    values[k] = item
+                    break
+
     return values
+
 
 def reduce_puzzle(values):
     stalled = False
@@ -150,10 +202,10 @@ def reduce_puzzle(values):
 
         # Your code here: Use the Eliminate Strategy
         # Your code here: Use the Only Choice Strategy
+
         values = eliminate(values)
         values = only_choice(values)
         values = naked_twins(values)
-
 
         # Check how many boxes have a determined value, to compare
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
