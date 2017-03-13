@@ -21,7 +21,7 @@ diagonal_units = [
     list(map(lambda x:x[0]+x[1], zip(rows, cols))),
     list(map(lambda x:x[0]+x[1], zip(rows[::-1], cols)))]
 
-
+# check whether this box is a diagonal box
 def is_diagonal(box_key):
     return any(box_key in dia for dia in diagonal_units)
 
@@ -48,6 +48,10 @@ def naked_twins(values):
 
     # Find all instances of naked twins
     # Eliminate the naked twins as possibilities for their peers
+
+    # naked twins in row
+    # first I find out how many times each digit appears in each row, store the count of each digit in dict: twins_count
+    # then find out the digit only appear twice in this row, eliminate it
     for row in row_units:
         twins_count = {}
         for k in row:
@@ -66,6 +70,8 @@ def naked_twins(values):
                     for i in v:
                         values[k] = values[k].replace(i, '')
 
+    # the method for column, is all the same as the row
+    # a lot of duplicate code here, but i am too lazy to refactor it ...
     for col in column_units:
         twins_count = {}
         for k in col:
@@ -84,8 +90,7 @@ def naked_twins(values):
                     for i in v:
                         values[k] = values[k].replace(i, '')
 
-    # naked twins in diagonal
-    # a lot of duplicate code here, but i am too lazy to refactor it ...
+    # the method for diagonal is same too
     for diagonal in diagonal_units:
         twins_count = {}
         for k in diagonal:
@@ -162,33 +167,42 @@ def eliminate(values):
 
 
 def only_choice(values):
+    # find out unsolved_values
     unsolved_values = [box for box in values.keys() if len(values[box]) != 1]
     for k in unsolved_values:
         v = values[k]
 
+        # find out whether this box in on diagonal
         is_diag = is_diagonal(k)
 
-        for item in v:
-            l = [item for row in row_units if row[0][0] == k[0] for p in row if item in values[p]]
+        # for each digit in this unsolved box
+        for digit in v:
+            # use the condition `row[0][0] == k[0]`, find out the row which k belongs
+            # for every p in this row, if digit in values[p], put this digit in list l
+            # this can find out whether this digit is the only choice for its row
+            l = [digit for row in row_units if row[0][0] == k[0] for p in row if digit in values[p]]
             if len(l) == 1:
-                values[k] = item
+                values[k] = digit
                 break
 
-            l = [item for col in column_units if col[0][1] == k[1] for p in col if item in values[p]]
+            # same method for the column
+            # this can find out whether this digit is the only choice for its column
+            l = [digit for col in column_units if col[0][1] == k[1] for p in col if digit in values[p]]
             if len(l) == 1:
-                values[k] = item
+                values[k] = digit
                 break
 
-            l = [item for square in square_units if k in square for p in square if item in values[p]]
+            # this can find out whether this digit is the only choice for its square
+            l = [digit for square in square_units if k in square for p in square if digit in values[p]]
             if len(l) == 1:
-                values[k] = item
+                values[k] = digit
                 break
 
-            # only choice for diagonal
+            # this can find out whether this digit is the only choice for its diagonal
             if is_diag:
-                l = [item for diagonal in diagonal_units if k in diagonal for p in diagonal if item in values[p]]
+                l = [digit for diagonal in diagonal_units if k in diagonal for p in diagonal if digit in values[p]]
                 if len(l) == 1:
-                    values[k] = item
+                    values[k] = digit
                     break
 
     return values
